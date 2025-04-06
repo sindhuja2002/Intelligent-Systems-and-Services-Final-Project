@@ -15,8 +15,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report
-from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification
-import tensorflow as tf
 
 # Download necessary NLTK datasets
 nltk.download('punkt_tab')
