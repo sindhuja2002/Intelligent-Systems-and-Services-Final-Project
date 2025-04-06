@@ -10,7 +10,13 @@ import csv
 from nltk.probability import FreqDist
 import matplotlib.pyplot as plt
 import string
-
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report
+from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification
+import tensorflow as tf
 
 # Download necessary NLTK datasets
 nltk.download('punkt_tab')
@@ -223,3 +229,42 @@ plot_word_frequencies(freq_dist_before, "Top 30 Frequent Words (Before Preproces
 
 # Plotting the 30 most frequent words after preprocessing
 plot_word_frequencies(freq_dist, "Top 30 Frequent Words (After Preprocessing)")
+
+
+# Split into 80% train, 20% temp
+train_df, temp_df = train_test_split(df_sampled, test_size=0.2, stratify=df_sampled['type'], random_state=42)
+# Split temp into 50% validation, 50% test (10% each of total)
+val_df, test_df = train_test_split(temp_df, test_size=0.5, stratify=temp_df['type'], random_state=42)
+
+# Example mapping (adjusted based on actual labels)
+label_mapping = {
+    'fake': 'fake',
+    'unreliable': 'fake',
+    'clickbait': 'fake',
+    'conspiracy': 'fake',
+    'bias': 'fake',
+    'junksci': 'fake',
+    'unknown': 'fake',
+    'hate': 'fake',
+    'political': 'fake',
+    'reliable': 'reliable'
+}
+df_sampled['binary_label'] = df_sampled['type'].map(label_mapping)
+
+# Convert processed_text back to strings (for TF-IDF)
+train_df['text_str'] = train_df['processed_text'].apply(lambda x: ' '.join(x))
+
+# Create pipeline
+model = Pipeline([
+    ('tfidf', TfidfVectorizer(max_features=1000)),  # Reduce dimensionality
+    ('clf', MultinomialNB())
+])
+
+# Train
+model.fit(train_df['text_str'], train_df['binary_label'])
+
+# Evaluate on validation set
+val_df['text_str'] = val_df['processed_text'].apply(lambda x: ' '.join(x))
+y_pred = model.predict(val_df['text_str'])
+print(classification_report(val_df['binary_label'], y_pred))
+
